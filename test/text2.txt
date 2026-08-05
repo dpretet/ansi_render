@@ -1,0 +1,10 @@
+Titre
+=====
+normal \e[0;31mrouge\e[0m normal \e[0;32mvert\e[0m normal
+\e[0;33mjaune 1\e[0m
+\e[0;33mjaune 2 encore jaune\e[0m fin
+abc \e[0;34mbleu avec espaces et 12345\e[0m xyz
+\e[0;35mviolet debut\e[0m puis rien
+prefixe \e[0;36mcyan\e[0m suffixe
+\e[0;31mrouge\e[0m/\e[0;32mvert\e[0m/\e[0;34mbleu\e[0m
+prefixe \e[0;36mcyan\e[m suffixe

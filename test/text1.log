@@ -1,0 +1,12 @@
+Texte normal au debut
+\e[0;31mTexte rouge\e[0m retour normal
+Ligne avec \e[0;32mvert\e[0m au milieu
+\e[0;34mTexte bleu sur toute la ligne jusqu'au reset\e[0m
+Mix: \e[0;33mjaune\e[0m puis \e[0;35mviolet\e[0m puis normal
+\e[0;36mCyan\e[0m
+\e[0;37mBlanc\e[0m
+\e[0;30mNoir\e[0m
+Fin normale
+\e[0;31mrouge \e[0;32mvert
+encore vert\e[0m
+

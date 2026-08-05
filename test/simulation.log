@@ -1,0 +1,65 @@
+
+       ______    ____  ________
+      / ___/ |  / / / / /_  __/
+      \__ \| | / / / / / / /  
+     ___/ /| |/ / /_/ / / /   
+    /____/ |___/\____/ /_/
+
+    v1.10.0
+
+SVUT (@ 12:53:34) Run with Icarus Verilog
+
+SVUT (@ 12:53:34) Start friscv_testbench.sv
+
+SVUT (@ 12:53:34) iverilog -g2012 -Wall -o svut.out -DFRISV_SIM=1 -DXLEN=32 -DCACHE_EN=1 -DCACHE_BLOCK_W=128 -DGEN_EIRQ=1 -DERROR_STATUS_X31=1 -DUSER_MODE=0 -DBOOT_ADDR=65536 -DTIMEOUT=100000 -DMIN_PC=65908 -DTB_CHOICE=0 -DTCNAME=rv32ui-p-fence_i -DINTERACTIVE=0 -DTRACE_CONTROL=1 -DTRACE_CACHE=1 -DTRACE_BLOCKS=1 -DTRACE_FETCHER=1 -DTRACE_PUSHER=1 -DTRACE_REGISTERS=1 -DTRACE_TB_RAM=1 -f files.f  -I ../../dep/svlogger ../../rtl ../../dep/axi-crossbar/rtl friscv_testbench.sv 
+
+SVUT (@ 12:53:34) vvp svut.out -fst 
+WARNING: ../common/axi4_ram.sv:204: $readmemh(test.v): Not enough words in the file for the requested range [0:268435455].
+[0;34mINFO: Tracing to friscv_testbench.fst (@ 0) (friscv_testbench.sv:880)[0m
+FST info: dumpfile friscv_testbench.fst opened for output.
+[0;34mINFO: Model running... (@ 0) (friscv_testbench.sv:883)[0m
+[0;34mINFO: Boot address: 0x00010000 (@ 0.0ns) (friscv_testbench.sv:900)[0m
+
+[0;34mINFO: Start testsuite << FRISCV Testbench >> (@ 0.0ns) (friscv_testbench.sv:1002)[0m
+
+[0;34mINFO: Starting << Test 0: rv32ui-p-fence_i >> (@ 0.0ns) (friscv_testbench.sv:1004)[0m
+
+[0;34mINFO: PC=0x1027c (@ 2621.0ns) (friscv_testbench.sv:909)[0m
+[0;34mINFO: X31=0x1 (@ 2621.0ns) (friscv_testbench.sv:915)[0m
+[1;31mERROR: X31 != 0 (ASSERT) (@ 2621.0ns) (friscv_testbench.sv:918)[0m
+[0;34mINFO: Halt on EBREAK (@ 2621.0ns) (friscv_testbench.sv:922)[0m
+[0;34mINFO: Halt on MRET (@ 2621.0ns) (friscv_testbench.sv:923)[0m
+pc:       0001027c	x16/a6:   00000000
+x1/ra:    00000000	x17/a7:   0000005d
+x2/sp:    00000000	x18/s2:   00000000
+x3/gp:    00000005	x19/s3:   00000000
+x4/tp:    00000000	x20/s4:   00000000
+x5/t0:    000121c8	x21/s5:   00000000
+x6/t1:    000101e0	x22/s6:   00000000
+x7/t2:    000001bc	x23/s7:   00000000
+x8/s0/fp: 00000000	x24/s8:   00000000
+x9/s1:    00000000	x25/s9:   00000000
+x10/a0:   00000005	x26/s10:  00000000
+x11/a1:   000014d6	x27/s11:  00000000
+x12/a2:   00000000	x28/t3:   00000000
+x13/a3:   0000014d	x29/t4:   00000000
+x14/a4:   00000000	x30/t5:   00000000
+x15/a5:   0001200c	x31/t6:   00000001
+[1;31mFAILURE: << Test 0: rv32ui-p-fence_i >> fail (@ 2621.0ns) (friscv_testbench.sv:1012)[0m
+
+[0;34mINFO: Stop testsuite 'FRISCV Testbench' (@ 2621.0ns) (friscv_testbench.sv:1014)[0m
+[1;31m
+Failling test(s): 'rv32ui-p-fence_i'
+
+  [1;33m- Warning number:  0[0m
+  [1;35m- Critical number: 0[0m
+  [1;31m- Error number:    1[0m
+  [1;31m- STATUS: 0/1 test(s) passed[0m
+
+friscv_testbench.sv:1036: $finish called at 2621000 (1ps)
+
+SVUT (@ 12:55:49) Stop friscv_testbench.sv
+
+SVUT (@ 12:55:49) Elapsed time: 0:02:14.834582
+
+
