@@ -136,135 +136,66 @@ function! ansi_render#ParseLines(lines) abort
         \ '37': 'AnsiWhite',
         \ }
 
-  " A color sequence may start with either a literal "\e" or a real ESC byte.
-  let l:prefix_pat = '^\%(\\e\|\%x1b\)\['
+  " Match complete supported sequences so ordinary text can be copied in chunks.
+  let l:ansi_pat = '\\e\[\%(0;\|1;\)3[0-7]m\|\\e\[\%(0\)\?m\|\%x1b\[\%(0;\|1;\)3[0-7]m\|\%x1b\[\%(0\)\?m'
   let l:current_group = ''
 
   for lnum in range(0, len(a:lines) - 1)
     let l:line = a:lines[lnum]
     let l:newline = ''
-    let l:segment_start = 0
-    let l:i = 0
+    let l:line_len = strlen(l:line)
+    let l:segment_start = l:current_group ==# '' ? 0 : 1
+    let l:pos = 0
 
-    " If a color is active from a previous line, the new colored segment
-    " starts at the first character of the current output line.
-    if l:current_group != ''
-      let l:segment_start = 1
+    " Most log lines do not contain ANSI sequences. Avoid the scanner entirely.
+    if l:line !~# l:ansi_pat
+      let l:newline = l:line
+      if l:current_group !=# '' && l:line_len > 0
+        call add(l:matches, {
+              \ 'group': l:current_group,
+              \ 'lnum': lnum + 1,
+              \ 'col': 1,
+              \ 'len': l:line_len,
+              \ })
+      endif
+      call add(l:out, l:newline)
+      continue
     endif
 
-    " Process the line one character or ANSI sequence at a time.
-    while l:i < strlen(l:line)
-      let l:rest = strpart(l:line, l:i)
+    while l:pos < l:line_len
+      let l:token = matchstrpos(l:line, l:ansi_pat, l:pos)
+      if l:token[1] < 0
+        let l:newline .= strpart(l:line, l:pos)
+        break
+      endif
 
-      " Handle color start sequences:
-      "
-      "   \e[0;31m
-      "   \e[1;31m
-      "   ESC[0;31m
-      "   ESC[1;31m
-      if l:rest =~# l:prefix_pat
-        if l:rest =~# '^\\e\[\%(0;\|1;\)3[0-7]m'
-          let l:full = matchstr(l:rest, '^\\e\[\%(0;\|1;\)3[0-7]m')
-          let l:code = strpart(l:full, strlen(l:full) - 3, 2)
-          let l:match_len = strlen(l:full)
+      " Copy all ordinary text before the next ANSI sequence at once.
+      if l:token[1] > l:pos
+        let l:newline .= strpart(l:line, l:pos, l:token[1] - l:pos)
+      endif
 
-          " Close the previous colored segment before starting the new one.
-          if l:current_group != '' && l:segment_start > 0
-            let l:segment_len = strlen(l:newline) - l:segment_start + 1
-            if l:segment_len > 0
-              call add(l:matches, {
-                    \ 'group': l:current_group,
-                    \ 'lnum': lnum + 1,
-                    \ 'col': l:segment_start,
-                    \ 'len': l:segment_len,
-                    \ })
-            endif
-          endif
-
-          let l:current_group = get(l:color_map, l:code, '')
-          let l:i += l:match_len
-          let l:segment_start = strlen(l:newline) + 1
-          continue
-        endif
-
-        if l:rest =~# '^\%x1b\[\%(0;\|1;\)3[0-7]m'
-          let l:full = matchstr(l:rest, '^\%x1b\[\%(0;\|1;\)3[0-7]m')
-          let l:code = strpart(l:full, strlen(l:full) - 3, 2)
-          let l:match_len = strlen(l:full)
-
-          " Close the previous colored segment before starting the new one.
-          if l:current_group != '' && l:segment_start > 0
-            let l:segment_len = strlen(l:newline) - l:segment_start + 1
-            if l:segment_len > 0
-              call add(l:matches, {
-                    \ 'group': l:current_group,
-                    \ 'lnum': lnum + 1,
-                    \ 'col': l:segment_start,
-                    \ 'len': l:segment_len,
-                    \ })
-            endif
-          endif
-
-          let l:current_group = get(l:color_map, l:code, '')
-          let l:i += l:match_len
-          let l:segment_start = strlen(l:newline) + 1
-          continue
-        endif
-
-        " Handle reset sequences:
-        "
-        "   \e[m
-        "   \e[0m
-        "   ESC[m
-        "   ESC[0m
-        if l:rest =~# '^\\e\[\%(0\)\?m'
-          let l:match_len = strlen(matchstr(l:rest, '^\\e\[\%(0\)\?m'))
-
-          " Close the current colored segment before resetting the color.
-          if l:current_group != '' && l:segment_start > 0
-            let l:segment_len = strlen(l:newline) - l:segment_start + 1
-            if l:segment_len > 0
-              call add(l:matches, {
-                    \ 'group': l:current_group,
-                    \ 'lnum': lnum + 1,
-                    \ 'col': l:segment_start,
-                    \ 'len': l:segment_len,
-                    \ })
-            endif
-          endif
-
-          let l:current_group = ''
-          let l:segment_start = 0
-          let l:i += l:match_len
-          continue
-        endif
-
-        if l:rest =~# '^\%x1b\[\%(0\)\?m'
-          let l:match_len = strlen(matchstr(l:rest, '^\%x1b\[\%(0\)\?m'))
-
-          " Close the current colored segment before resetting the color.
-          if l:current_group != '' && l:segment_start > 0
-            let l:segment_len = strlen(l:newline) - l:segment_start + 1
-            if l:segment_len > 0
-              call add(l:matches, {
-                    \ 'group': l:current_group,
-                    \ 'lnum': lnum + 1,
-                    \ 'col': l:segment_start,
-                    \ 'len': l:segment_len,
-                    \ })
-            endif
-          endif
-
-          let l:current_group = ''
-          let l:segment_start = 0
-          let l:i += l:match_len
-          continue
+      " Close the previous colored segment before changing its state.
+      if l:current_group !=# '' && l:segment_start > 0
+        let l:segment_len = strlen(l:newline) - l:segment_start + 1
+        if l:segment_len > 0
+          call add(l:matches, {
+                \ 'group': l:current_group,
+                \ 'lnum': lnum + 1,
+                \ 'col': l:segment_start,
+                \ 'len': l:segment_len,
+                \ })
         endif
       endif
 
-      " Copy ordinary characters to the rendered line.
-      let l:newline .= strpart(l:line, l:i, 1)
-      let l:i += 1
+      let l:code = matchstr(l:token[0], '3[0-7]')
+      if l:code !=# ''
+        let l:current_group = get(l:color_map, l:code, '')
+        let l:segment_start = strlen(l:newline) + 1
+      else
+        let l:current_group = ''
+        let l:segment_start = 0
+      endif
+      let l:pos = l:token[2]
     endwhile
 
     " Close any colored segment that continues until the end of the line.
@@ -294,9 +225,17 @@ endfunction
 " rendered view is closed.
 function! ansi_render#ApplyMatches(matches) abort
   let b:ansi_render_match_ids = []
+  let l:positions_by_group = {}
 
   for l:m in a:matches
-    let l:id = matchaddpos(l:m.group, [[l:m.lnum, l:m.col, l:m.len]])
+    if !has_key(l:positions_by_group, l:m.group)
+      let l:positions_by_group[l:m.group] = []
+    endif
+    call add(l:positions_by_group[l:m.group], [l:m.lnum, l:m.col, l:m.len])
+  endfor
+
+  for l:group in keys(l:positions_by_group)
+    let l:id = matchaddpos(l:group, l:positions_by_group[l:group])
     call add(b:ansi_render_match_ids, l:id)
   endfor
-endfunctionndfunction
+endfunction
