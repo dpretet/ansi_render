@@ -86,12 +86,39 @@ The plugin favors terminal readability over strict ANSI fidelity:
 - On dark backgrounds, ANSI black maps to gray (`ctermfg=8`).
 - On light backgrounds, ANSI white maps to black (`ctermfg=0`).
 
+## Performance Requirement
+
+Rendering `test/text3.txt` must complete in no more than 5 seconds on the
+development machine. This fixture is the large regression case (currently
+about 52,000 lines and 5.5 MB). Keep the parser linear in the input size and
+avoid per-character or per-match operations that scale poorly.
+
+Benchmark the rendering operation separately from Vim startup and file
+loading. The command below writes the elapsed render time, rendered line count,
+and view-state check to `/tmp/ansi_render_benchmark`:
+
+```sh
+vim -Nu NONE -n -es \
+  -c "set rtp^=$PWD" \
+  -c 'runtime plugin/ansi_render.vim' \
+  -c 'edit test/text3.txt' \
+  -c 'let s = reltime()' \
+  -c 'RenderToggle' \
+  -c "call writefile([reltimestr(reltime(s)), string(line('$')), string(get(b:, 'ansi_render_is_view', 0))], '/tmp/ansi_render_benchmark')" \
+  -c 'qa!'
+```
+
+The benchmark should report a time below `5.0` seconds, `52366` rendered lines,
+and view state `1`. Also check the process wall-clock time when diagnosing
+interactive startup or file-loading regressions.
+
 ## Verification
 
 There is no automated test runner. Manually verify changes in Vim with the
 plugin loaded:
 
-1. Open `test/simulation.log`, `test/text1.log`, or `test/text2.txt`.
+1. Open `test/simulation.log`, `test/text1.log`, `test/text2.txt`, or
+   `test/text3.txt`.
 2. Run `:RenderToggle` and confirm markers are hidden and colors are visible.
 3. Run `:RenderToggle` again and confirm the original buffer is restored.
 4. For parser or lifecycle changes, also check splits, rendering a second file
