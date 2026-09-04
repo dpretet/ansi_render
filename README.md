@@ -25,6 +25,7 @@ The plugin opens a rendered scratch buffer in the current window, hides the ANSI
 - Color persistence across lines
 - Color switches without explicit reset
 - Simple implementation using Vim built-ins only
+- Refresh the rendered view after source-buffer edits or reloads
 
 ## Scope
 
@@ -36,7 +37,7 @@ Not implemented yet:
 - bold / bright distinction
 - 256-color ANSI
 - truecolor ANSI
-- live sync with file changes
+- continuous polling for changes made by external processes
 
 ## Installation
 
@@ -83,4 +84,3 @@ Notes
 - For readability:
     - on dark backgrounds, ANSI black is remapped to gray
     - on light backgrounds, ANSI white is remapped to black
-

@@ -27,7 +27,8 @@ supported behavior, important invariant, or verification step changes.
 
 `ansi_render#RenderToggle()` toggles based on the current buffer. Opening a
 rendered view reads the source lines, parses them, creates a new buffer in the
-current window, and applies highlights with `matchaddpos()`. Closing the view
+current window, and applies highlights with `matchaddpos()`. Edits and reloads
+of the source buffer refresh the existing rendered buffer. Closing the view
 removes its matches, returns to the source buffer when it still exists, and
 wipes the temporary buffer.
 
@@ -42,12 +43,15 @@ Public functions in `autoload/ansi_render.vim`:
 - `ansi_render#DefineHighlights()` defines `AnsiBlack` through `AnsiWhite`.
 - `ansi_render#ParseLines(lines)` returns `[rendered_lines, matches]`.
 - `ansi_render#ApplyMatches(matches)` applies parsed `matchaddpos()` ranges.
+- `ansi_render#RefreshRenderedBuffer(src_bufnr)` reparses a changed source
+  buffer and refreshes its rendered view.
 
 View state is buffer-local:
 
 - `b:ansi_render_is_view`
 - `b:ansi_render_source_bufnr`
 - `b:ansi_render_match_ids`
+- Source buffers with an open view also store `b:ansi_render_view_bufnr`.
 
 ## Supported Input
 
@@ -122,4 +126,5 @@ plugin loaded:
 2. Run `:RenderToggle` and confirm markers are hidden and colors are visible.
 3. Run `:RenderToggle` again and confirm the original buffer is restored.
 4. For parser or lifecycle changes, also check splits, rendering a second file
-   in the same window, color persistence across lines, and both reset forms.
+   in the same window, editing and reloading the source while rendered, color
+   persistence across lines, and both reset forms.

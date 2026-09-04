@@ -39,6 +39,7 @@ function! ansi_render#OpenRenderedBuffer() abort
   " Store the relationship between the rendered buffer and its source.
   let b:ansi_render_is_view = 1
   let b:ansi_render_source_bufnr = l:src_bufnr
+  call setbufvar(l:src_bufnr, 'ansi_render_view_bufnr', l:render_bufnr)
 
   " Give the rendered buffer a descriptive name based on the source name.
   execute 'file ' . fnameescape('[Rendered] ' . l:src_name)
@@ -73,6 +74,7 @@ function! ansi_render#CloseRenderedBuffer() abort
 
   " Return to the source buffer when it is still available.
   if l:src_bufnr != -1 && bufexists(l:src_bufnr)
+    call setbufvar(l:src_bufnr, 'ansi_render_view_bufnr', -1)
     execute 'buffer ' . l:src_bufnr
     if bufexists(l:view_bufnr)
       execute 'bwipeout ' . l:view_bufnr
@@ -80,6 +82,52 @@ function! ansi_render#CloseRenderedBuffer() abort
   else
     " If the source buffer no longer exists, close the rendered buffer.
     bwipeout
+  endif
+endfunction
+
+" Refresh the rendered view associated with a changed source buffer.
+function! ansi_render#RefreshRenderedBuffer(src_bufnr) abort
+  if !bufexists(a:src_bufnr)
+    return
+  endif
+
+  let l:view_bufnr = getbufvar(a:src_bufnr, 'ansi_render_view_bufnr', -1)
+  if l:view_bufnr == -1 || !bufexists(l:view_bufnr)
+    return
+  endif
+
+  let l:view_windows = win_findbuf(l:view_bufnr)
+  if empty(l:view_windows)
+    return
+  endif
+
+  let l:source_window = win_getid()
+  let l:was_insert_mode = mode(1) =~# '^i'
+  if !bufloaded(a:src_bufnr)
+    noautocmd call bufload(a:src_bufnr)
+  endif
+  let l:source_lines = getbufline(a:src_bufnr, 1, '$')
+  let [l:rendered_lines, l:matches] = ansi_render#ParseLines(l:source_lines)
+
+  call win_gotoid(l:view_windows[0])
+  if exists('b:ansi_render_match_ids')
+    for l:id in b:ansi_render_match_ids
+      silent! call matchdelete(l:id)
+    endfor
+  endif
+
+  setlocal modifiable
+  call setline(1, l:rendered_lines)
+  if line('$') > len(l:rendered_lines)
+    call deletebufline(l:view_bufnr, len(l:rendered_lines) + 1, '$')
+  endif
+  call ansi_render#ApplyMatches(l:matches)
+  setlocal nomodifiable
+  setlocal readonly
+
+  call win_gotoid(l:source_window)
+  if l:was_insert_mode
+    startinsert
   endif
 endfunction
 
